@@ -7,12 +7,8 @@ const srcBucket = process.env.SRC_BUCKET;
 const destBucket = process.env.DEST_BUCKET;
 
 exports.handler = (event, context, callback) => {
-
-  console.log(srcBucket, destBucket, event)
   let imgName = event.Records[0].s3.object.key;
-
   let watermarkImg = './copy1.png';
-
   let width = 200;
   let height = 300;
   let offset = 75;
@@ -28,10 +24,10 @@ exports.handler = (event, context, callback) => {
         offset = 0;
         orientation = 'landscape';
       }
-      console.log(width, height, offset, orientation)
       createThumbnail(img, width, height, offset, orientation, watermarkImg).then(thumbnail => {
-        writeFileToBucket(destBucket, 'thumbnail_' + imgName, thumbnail, 'image/jpeg').then(response => {
-          callback(null, JSON.stringify(response))
+        writeFileToBucket(destBucket, imgName, thumbnail, 'image/jpeg').then(response => {
+          response.objectUrl = 'http://' + destBucket + '.s3.amazonaws.com/' + imgName
+          callback(null, response)
         }).catch(err => {
           console.log(err.message, 'error in writing to dest')
           callback('error in writing to dest')
@@ -97,8 +93,6 @@ function createThumbnail(img, width, height, offset, orientation, watermarkImg) 
       .gravity('center')
       .composite(watermarkImg)
       .geometry(geometry)
-      .font("Helvetica.ttf", 12)
-      .drawText(30, 20, "GMagick!")
       .toBuffer('jpg', (err, imgBuffer) => {
         if (err) {
           return reject(err)
