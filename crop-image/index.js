@@ -12,8 +12,8 @@ exports.handler = (event, context, callback) => {
   let imgName = event.imgName;
   let cropRatio = event.cropRatio;
   let productType = event.productType;
-  let laptime = event.laptime
-  let addLaptime = false
+  let laptime = event.laptime;
+  let addLaptime = false;
   if (productType === 'All' || productType === 'Single') {
     addLaptime = false
   } else if (productType === 'All with laptime' || productType === 'Single with laptime' ) {
@@ -27,28 +27,14 @@ exports.handler = (event, context, callback) => {
     if (event.cropRatio && event.cropRatio.width) {
       if (!addLaptime) {
         cropImage(img, cropRatio).then(croppedImg => {
-          writeFileToBucket(destBucket, 'cropped_' + imgName, croppedImg, 'image/jpeg').then(response => {
-            console.log('Hurah!! success')
-            response.objectUrl = 'http://' + destBucket + '.s3.amazonaws.com/' + 'cropped_' + imgName
-            callback(null, response)
-          }).catch(err => {
-            console.log(err.message, 'error in writing to dest')
-            callback('error in writing to dest')
-          })
+          writeImageToBucket(imgName, croppedImg, callback)
         }).catch(err => {
           console.log(err.message, 'error in cropping img')
           callback('error in cropping img')
         })
       } else {
         cropImageWithLap(img, cropRatio, laptime).then(croppedImg => {
-          writeFileToBucket(destBucket, 'cropped_' + imgName, croppedImg, 'image/jpeg').then(response => {
-            console.log('Hurah!! success')
-            response.objectUrl = 'http://' + destBucket + '.s3.amazonaws.com/' + 'cropped_' + imgName
-            callback(null, response)
-          }).catch(err => {
-            console.log(err.message, 'error in writing to dest')
-            callback('error in writing to dest')
-          })
+          writeImageToBucket(imgName, croppedImg, callback)
         }).catch(err => {
           console.log(err.message, 'error in cropping img')
           callback('error in cropping img')
@@ -57,27 +43,13 @@ exports.handler = (event, context, callback) => {
     } else if (addLaptime) {
       addLaptimeToImage(img, laptime).then(croppedImg => {
         console.log('addlimet to imagesa')
-        writeFileToBucket(destBucket, 'cropped_' + imgName, croppedImg, 'image/jpeg').then(response => {
-          console.log('Hurah!! success')
-          response.objectUrl = 'http://' + destBucket + '.s3.amazonaws.com/' + 'cropped_' + imgName
-          callback(null, response)
-        }).catch(err => {
-          console.log(err.message, 'error in writing to dest')
-          callback('error in writing to dest')
-        })
+        writeImageToBucket(imgName, croppedImg, callback)
       }).catch(err => {
         console.log(err.message, 'error in cropping img')
         callback('error in cropping img')
       })
     } else {
-      writeFileToBucket(destBucket, 'cropped_' + imgName, img, 'image/jpeg').then(response => {
-        console.log('Hurah!! success')
-        response.objectUrl = 'http://' + destBucket + '.s3.amazonaws.com/' + 'cropped_' + imgName
-        callback(null, response)
-      }).catch(err => {
-        console.log(err.message, 'error in writing to dest')
-        callback('error in writing to dest')
-      })
+      writeImageToBucket(imgName, croppedImg, callback)
     }
 
   }).catch(err => {
@@ -87,11 +59,10 @@ exports.handler = (event, context, callback) => {
       callback('No file found')
     }
   })
-
-
 };
 
 function readFileFromBucket (bucketName, fileName) {
+  console.log('readFileFromBucket')
   let params = {
     Bucket: bucketName,
     Key: fileName
@@ -108,6 +79,7 @@ function readFileFromBucket (bucketName, fileName) {
 }
 
 function writeFileToBucket (bucketName, fileName, content, contentType) {
+  console.log('writeFileToBucket')
   let params = {
     Bucket: bucketName,
     Key: fileName,
@@ -126,6 +98,7 @@ function writeFileToBucket (bucketName, fileName, content, contentType) {
 }
 
 function cropImage(img, cropRatio) {
+  console.log('cropImage')
   let width = cropRatio.width
   let height = cropRatio.height
   let ratio = 6.4
@@ -144,6 +117,7 @@ function cropImage(img, cropRatio) {
 }
 
 function cropImageWithLap(img, cropRatio, laptime) {
+  console.log('cropImageWithLap')
   let width = cropRatio.width
   let height = cropRatio.height
   let ratio = 6.4
@@ -185,5 +159,17 @@ function addLaptimeToImage(img, laptime) {
           }
         })
     })
+  })
+}
+
+function writeImageToBucket (imgName, croppedImg, callback) {
+  console.log('writeImageToBucket')
+  writeFileToBucket(destBucket, 'cropped_' + imgName, croppedImg, 'image/jpeg').then(response => {
+    console.log('Hurah!! success')
+    response.objectUrl = 'http://' + destBucket + '.s3.amazonaws.com/' + 'cropped_' + imgName
+    callback(null, response)
+  }).catch(err => {
+    console.log(err.message, 'error in writing to dest')
+    callback('error in writing to dest')
   })
 }
