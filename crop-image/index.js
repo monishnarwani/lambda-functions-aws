@@ -11,13 +11,66 @@ exports.handler = (event, context, callback) => {
   // let imgName = event.Records[0].s3.object.key;
   let imgName = event.imgName;
   let cropRatio = event.cropRatio;
+  let productType = event.productType;
+  let laptime = event.laptime
+  let addLaptime = false
+  if (productType === 'All' || productType === 'Single') {
+    addLaptime = false
+  } else if (productType === 'All with laptime' || productType === 'Single with laptime' ) {
+    addLaptime = true
+  }
   console.log(cropRatio);
 
   readFileFromBucket(srcBucket, imgName).then(response => {
     console.log('file found') // content of file
     let img = response.Body
-    cropImage(img, cropRatio).then(croppedImg => {
-      writeFileToBucket(destBucket, 'cropped_' + imgName, croppedImg, 'image/jpeg').then(response => {
+    if (event.cropRatio && event.cropRatio.width) {
+      if (!addLaptime) {
+        cropImage(img, cropRatio).then(croppedImg => {
+          writeFileToBucket(destBucket, 'cropped_' + imgName, croppedImg, 'image/jpeg').then(response => {
+            console.log('Hurah!! success')
+            response.objectUrl = 'http://' + destBucket + '.s3.amazonaws.com/' + 'cropped_' + imgName
+            callback(null, response)
+          }).catch(err => {
+            console.log(err.message, 'error in writing to dest')
+            callback('error in writing to dest')
+          })
+        }).catch(err => {
+          console.log(err.message, 'error in cropping img')
+          callback('error in cropping img')
+        })
+      } else {
+        cropImageWithLap(img, cropRatio, laptime).then(croppedImg => {
+          writeFileToBucket(destBucket, 'cropped_' + imgName, croppedImg, 'image/jpeg').then(response => {
+            console.log('Hurah!! success')
+            response.objectUrl = 'http://' + destBucket + '.s3.amazonaws.com/' + 'cropped_' + imgName
+            callback(null, response)
+          }).catch(err => {
+            console.log(err.message, 'error in writing to dest')
+            callback('error in writing to dest')
+          })
+        }).catch(err => {
+          console.log(err.message, 'error in cropping img')
+          callback('error in cropping img')
+        })
+      }
+    } else if (addLaptime) {
+      addLaptimeToImage(img, laptime).then(croppedImg => {
+        console.log('addlimet to imagesa')
+        writeFileToBucket(destBucket, 'cropped_' + imgName, croppedImg, 'image/jpeg').then(response => {
+          console.log('Hurah!! success')
+          response.objectUrl = 'http://' + destBucket + '.s3.amazonaws.com/' + 'cropped_' + imgName
+          callback(null, response)
+        }).catch(err => {
+          console.log(err.message, 'error in writing to dest')
+          callback('error in writing to dest')
+        })
+      }).catch(err => {
+        console.log(err.message, 'error in cropping img')
+        callback('error in cropping img')
+      })
+    } else {
+      writeFileToBucket(destBucket, 'cropped_' + imgName, img, 'image/jpeg').then(response => {
         console.log('Hurah!! success')
         response.objectUrl = 'http://' + destBucket + '.s3.amazonaws.com/' + 'cropped_' + imgName
         callback(null, response)
@@ -25,10 +78,7 @@ exports.handler = (event, context, callback) => {
         console.log(err.message, 'error in writing to dest')
         callback('error in writing to dest')
       })
-    }).catch(err => {
-      console.log(err.message, 'error in cropping img')
-      callback('error in cropping img')
-    })
+    }
 
   }).catch(err => {
     console.log(err, err.message, err.code) // message: 'The specified key does not exist.',code: 'NoSuchKey'
@@ -79,6 +129,7 @@ function cropImage(img, cropRatio) {
   let width = cropRatio.width
   let height = cropRatio.height
   let ratio = 6.4
+
   return new Promise((resolve, reject) => {
     console.log('cropping image/jpeg');
     gm(img).crop(width * ratio, height * ratio, cropRatio.x * ratio, cropRatio.y * ratio)
@@ -89,5 +140,50 @@ function cropImage(img, cropRatio) {
           return resolve(imgBuffer)
         }
       })
+  })
+}
+
+function cropImageWithLap(img, cropRatio, laptime) {
+  let width = cropRatio.width
+  let height = cropRatio.height
+  let ratio = 6.4
+
+  return new Promise((resolve, reject) => {
+    console.log('cropping with lap image/jpeg');
+    gm(img).crop(width * ratio, height * ratio, cropRatio.x * ratio, cropRatio.y * ratio)
+      .font('digital-7.ttf', 60).drawText((width * ratio) + (cropRatio.x * ratio) - 200, (height * ratio) + (cropRatio.y * ratio) - 30 , laptime)
+      .toBuffer('jpg', (err, imgBuffer) => {
+        if (err) {
+          return reject(err)
+        } else {
+          return resolve(imgBuffer)
+        }
+      })
+  })
+}
+
+function addLaptimeToImage(img, laptime) {
+  console.log('in adding laptime to image')
+  let width = 0;
+  let height = 0;
+  let ratio = 6.4;
+
+
+  return new Promise((resolve, reject) => {
+    gm(img).size((err, val) => {
+      if (!err) {
+        width = val.width
+        height = val.height
+      }
+      gm(img)
+        .font('digital-7.ttf', 60).drawText((width) - 200, (height) - 20 , laptime)
+        .toBuffer('jpg', (err, imgBuffer) => {
+          if (err) {
+            return reject(err)
+          } else {
+            return resolve(imgBuffer)
+          }
+        })
+    })
   })
 }
