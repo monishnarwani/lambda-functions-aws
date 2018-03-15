@@ -49,7 +49,7 @@ exports.handler = (event, context, callback) => {
         callback('error in cropping img')
       })
     } else {
-      writeImageToBucket(imgName, croppedImg, callback)
+      writeImageToBucket(imgName, img, callback)
     }
 
   }).catch(err => {
@@ -125,7 +125,7 @@ function cropImageWithLap(img, cropRatio, laptime) {
   return new Promise((resolve, reject) => {
     console.log('cropping with lap image/jpeg');
     gm(img).crop(width * ratio, height * ratio, cropRatio.x * ratio, cropRatio.y * ratio)
-      .font('digital-7.ttf', 60).drawText((width * ratio) + (cropRatio.x * ratio) - 200, (height * ratio) + (cropRatio.y * ratio) - 30 , laptime)
+      .fill('red').font('digital-7.ttf', 60).drawText((width * ratio) + (cropRatio.x * ratio) - 200, (height * ratio) + (cropRatio.y * ratio) - 30 , laptime)
       .toBuffer('jpg', (err, imgBuffer) => {
         if (err) {
           return reject(err)
@@ -150,7 +150,7 @@ function addLaptimeToImage(img, laptime) {
         height = val.height
       }
       gm(img)
-        .font('digital-7.ttf', 60).drawText((width) - 200, (height) - 20 , laptime)
+        .fill('red').font('digital-7.ttf', 60).drawText((width) - 200, (height) - 20 , laptime)
         .toBuffer('jpg', (err, imgBuffer) => {
           if (err) {
             return reject(err)

@@ -8,7 +8,9 @@ const destBucket = process.env.DEST_BUCKET;
 
 exports.handler = (event, context, callback) => {
   let imgName = event.Records[0].s3.object.key;
-  let watermarkImg = './copy1.png';
+  let eventLogo = 'https://s3.ap-south-1.amazonaws.com/resume.narwanimonish.co/copyright.png'
+  let watermarkImg = eventLogo;
+  // let watermarkImg = './copy1.png';
   let width = 200;
   let height = 300;
   let offset = 75;
