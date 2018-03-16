@@ -5,20 +5,18 @@ const gm = require('gm')
 const fs = require('fs');
 const srcBucket = process.env.SRC_BUCKET;
 const destBucket = process.env.DEST_BUCKET;
+const S3Utils = require('./S3Utils')
 
 exports.handler = (event, context, callback) => {
   let imgName = event.Records[0].s3.object.key;
-  let eventLogo = 'copyright.png'
-  let watermarkImg = eventLogo;
-  // let watermarkImg = './copy1.png';
+  let watermarkImg = 'copyright.png';
   let width = 200;
   let height = 300;
   let offset = 75;
   let orientation = 'portrait';
 
-  readFileFromBucket(srcBucket, imgName).then(response => {
+  S3Utils.readFileFromBucket(s3, srcBucket, imgName).then(response => {
     let img = response.Body
-
     gm(img).size((err, value) => {
       if (value && (value.width > value.height)) {
         width = 300;
@@ -27,7 +25,7 @@ exports.handler = (event, context, callback) => {
         orientation = 'landscape';
       }
       createThumbnail(img, width, height, offset, orientation, watermarkImg).then(thumbnail => {
-        writeFileToBucket(destBucket, imgName, thumbnail, 'image/jpeg').then(response => {
+        S3Utils.writeFileToBucket(s3, destBucket, imgName, thumbnail, 'image/jpeg').then(response => {
           response.objectUrl = 'http://' + destBucket + '.s3.amazonaws.com/' + imgName
           callback(null, response)
         }).catch(err => {
@@ -48,49 +46,11 @@ exports.handler = (event, context, callback) => {
   })
 };
 
-function readFileFromBucket (bucketName, fileName) {
-  let params = {
-    Bucket: bucketName,
-    Key: fileName
-  };
-  return new Promise(((resolve, reject) => {
-    s3.getObject(params, (err, fileData) => {
-      if (err) {
-        return reject(err)
-      } else {
-        resolve(fileData)
-      }
-    })
-  }))
-}
-
-function writeFileToBucket (bucketName, fileName, content, contentType) {
-  let params = {
-    Bucket: bucketName,
-    Key: fileName,
-    Body: content,
-    ContentType: contentType
-  }
-  return new Promise((resolve, reject) => {
-    s3.putObject(params, (err, response) => {
-      if (err) {
-        return reject(err)
-      } else {
-        return resolve(response)
-      }
-    })
-  })
-}
 
 function createThumbnail(img, width, height, offset, orientation, watermarkImg) {
-
-  console.log(watermarkImg)
-
-
   return new Promise((resolve, reject) => {
-    console.log('creating thumbnail image/jpeg');
     let geometry = width + 'x' + height + '+0+' + offset
-    readFileFromBucket(srcBucket, watermarkImg).then(response => {
+    S3Utils.readFileFromBucket(s3, srcBucket, watermarkImg).then(response => {
       let image = response.Body
       fs.writeFile('/tmp/event.jpg', image, (err) =>  {
         if (err) console.log('error in writing file')
