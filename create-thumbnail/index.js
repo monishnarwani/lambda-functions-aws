@@ -2,13 +2,13 @@ const AWS = require('aws-sdk');
 const s3 = new AWS.S3();
 const gm = require('gm')
   .subClass({ imageMagick: true });
-
+const fs = require('fs');
 const srcBucket = process.env.SRC_BUCKET;
 const destBucket = process.env.DEST_BUCKET;
 
 exports.handler = (event, context, callback) => {
   let imgName = event.Records[0].s3.object.key;
-  let eventLogo = 'https://s3.ap-south-1.amazonaws.com/resume.narwanimonish.co/copyright.png'
+  let eventLogo = 'copyright.png'
   let watermarkImg = eventLogo;
   // let watermarkImg = './copy1.png';
   let width = 200;
@@ -90,17 +90,22 @@ function createThumbnail(img, width, height, offset, orientation, watermarkImg) 
   return new Promise((resolve, reject) => {
     console.log('creating thumbnail image/jpeg');
     let geometry = width + 'x' + height + '+0+' + offset
-    console.log(geometry)
-    gm(img).resize(width, height, '^')
-      .gravity('center')
-      .composite(watermarkImg)
-      .geometry(geometry)
-      .toBuffer('jpg', (err, imgBuffer) => {
-        if (err) {
-          return reject(err)
-        } else {
-          return resolve(imgBuffer)
-        }
+    readFileFromBucket(srcBucket, watermarkImg).then(response => {
+      let image = response.Body
+      fs.writeFile('/tmp/event.jpg', image, (err) =>  {
+        if (err) console.log('error in writing file')
       })
+      gm(img).resize(width, height, '^')
+        .gravity('center')
+        .composite('/tmp/event.jpg')
+        .geometry(geometry)
+        .toBuffer('jpg', (err, imgBuffer) => {
+          if (err) {
+            return reject(err)
+          } else {
+            return resolve(imgBuffer)
+          }
+        })
+    })
   })
 }
