@@ -3,9 +3,11 @@ const s3 = new AWS.S3();
 const gm = require('gm')
   .subClass({ imageMagick: true });
 const fs = require('fs');
+
+const S3Utils = require('./S3Utils');
+
 const srcBucket = process.env.SRC_BUCKET;
 const destBucket = process.env.DEST_BUCKET;
-const S3Utils = require('./S3Utils');
 
 exports.handler = (event, context, callback) => {
 
