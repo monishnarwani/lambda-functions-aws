@@ -16,6 +16,7 @@ exports.handler = (event, context, callback) => {
   let productType = event.productType;
   let laptime = event.laptime;
   let addLaptime = false;
+  let raceType = event.raceType
   if (productType === 'All' || productType === 'Single') {
     addLaptime = false
   } else if (productType === 'All with laptime' || productType === 'Single with laptime' ) {
@@ -37,7 +38,7 @@ exports.handler = (event, context, callback) => {
           callback('error in cropping img')
         })
       } else {
-        cropImageWithLap(img, cropRatio, laptime).then(croppedImg => {
+        cropImageWithLap(img, cropRatio, laptime, raceType).then(croppedImg => {
           writeImageToBucket(imgName, croppedImg).then(response => {
             callback(null, response)
           }).catch(err => {
@@ -49,7 +50,7 @@ exports.handler = (event, context, callback) => {
         })
       }
     } else if (addLaptime) {
-      addLaptimeToImage(img, laptime).then(croppedImg => {
+      addLaptimeToImage(img, laptime, raceType).then(croppedImg => {
         writeImageToBucket(imgName, croppedImg).then(response => {
           callback(null, response)
         }).catch(err => {
@@ -92,7 +93,7 @@ function cropImage(img, cropRatio) {
   })
 }
 
-function cropImageWithLap(img, cropRatio, laptime) {
+function cropImageWithLap(img, cropRatio, laptime, raceType) {
   let width = cropRatio.width
   let height = cropRatio.height
   let ratio = 6.4
@@ -101,6 +102,7 @@ function cropImageWithLap(img, cropRatio, laptime) {
     console.log('cropping with lap image/jpeg');
     gm(img).crop(width * ratio, height * ratio, cropRatio.x * ratio, cropRatio.y * ratio)
       .fill('red').font('digital-7.ttf', 60).drawText((width * ratio) + (cropRatio.x * ratio) - 200, (height * ratio) + (cropRatio.y * ratio) - 30 , laptime)
+      .drawText((width * ratio) + (cropRatio.x * ratio) - 400, (height * ratio) + (cropRatio.y * ratio) - 80 , raceType)
       .toBuffer('jpg', (err, imgBuffer) => {
         if (err) {
           return reject(err)
@@ -111,7 +113,7 @@ function cropImageWithLap(img, cropRatio, laptime) {
   })
 }
 
-function addLaptimeToImage(img, laptime) {
+function addLaptimeToImage(img, laptime, raceType) {
   let width = 0;
   let height = 0;
   let ratio = 6.4;
@@ -122,7 +124,7 @@ function addLaptimeToImage(img, laptime) {
         height = val.height
       }
       gm(img)
-        .fill('red').font('digital-7.ttf', 60).drawText((width) - 200, (height) - 20 , laptime)
+        .fill('red').font('digital-7.ttf', 60).drawText((width) - 300, (height) - 20 , laptime).drawText((width - 400), (height - 70), raceType)
         .toBuffer('jpg', (err, imgBuffer) => {
           if (err) {
             return reject(err)
