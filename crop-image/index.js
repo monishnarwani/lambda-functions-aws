@@ -101,8 +101,10 @@ function cropImageWithLap(img, cropRatio, laptime, raceType) {
   return new Promise((resolve, reject) => {
     console.log('cropping with lap image/jpeg');
     gm(img).crop(width * ratio, height * ratio, cropRatio.x * ratio, cropRatio.y * ratio)
-      .fill('red').font('digital-7.ttf', 60).drawText((width * ratio) + (cropRatio.x * ratio) - 200, (height * ratio) + (cropRatio.y * ratio) - 30 , laptime)
-      .drawText((width * ratio) + (cropRatio.x * ratio) - 400, (height * ratio) + (cropRatio.y * ratio) - 80 , raceType)
+      .fill('red')
+      .font('digital-7.ttf', (height*ratio*5/100))
+      .drawText((width * ratio) + (cropRatio.x * ratio) - (width*ratio*20/100), (height * ratio) + (cropRatio.y * ratio) - (height*ratio*10/100) , raceType)
+      .drawText((width * ratio) + (cropRatio.x * ratio) - (width*ratio*16/100), (height * ratio) + (cropRatio.y * ratio) - (height*ratio*5/100) , laptime)
       .toBuffer('jpg', (err, imgBuffer) => {
         if (err) {
           return reject(err)
@@ -124,7 +126,10 @@ function addLaptimeToImage(img, laptime, raceType) {
         height = val.height
       }
       gm(img)
-        .fill('red').font('digital-7.ttf', 60).drawText((width) - 300, (height) - 20 , laptime).drawText((width - 400), (height - 70), raceType)
+        .fill('red')
+        .font('digital-7.ttf', (height*5/100))
+        .drawText((width - (width*20/100)), (height - (height*10/100)), raceType)
+        .drawText((width) - (width*16/100), (height) - (height*5/100) , laptime)
         .toBuffer('jpg', (err, imgBuffer) => {
           if (err) {
             return reject(err)
