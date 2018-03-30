@@ -71,7 +71,7 @@ exports.handler = (event, context, callback) => {
     console.log(err, err.message, err.code) // message: 'The specified key does not exist.',code: 'NoSuchKey'
     if (err.code === 'NoSuchKey') {
       // File not found
-      callback('No file found')
+      callback(new Error('No file found'));
     }
   })
 };

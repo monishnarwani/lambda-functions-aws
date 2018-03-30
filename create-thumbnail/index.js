@@ -3,15 +3,14 @@ const s3 = new AWS.S3();
 const gm = require('gm')
   .subClass({ imageMagick: true });
 const fs = require('fs');
-
-const S3Utils = require('./S3Utils');
-
 const srcBucket = process.env.SRC_BUCKET;
 const destBucket = process.env.DEST_BUCKET;
+const S3Utils = require('./S3Utils');
 
 exports.handler = (event, context, callback) => {
 
   let imgName = event.Records[0].s3.object.key;
+  console.log('my image', imgName);
   let eventName = imgName.split('/')[0];
   let watermarkImg = process.env.WATERMARK_IMG;
   let imageDetails = {
@@ -20,7 +19,9 @@ exports.handler = (event, context, callback) => {
     offset: 75,
     orientation: 'portrait'
   };
+  console.log(imgName);
   S3Utils.readFileFromBucket(s3, srcBucket, imgName).then(response => {
+    console.log(response);
     let image = response.Body;
     gm(image).size((err, value) => {
 
@@ -50,7 +51,7 @@ exports.handler = (event, context, callback) => {
   }).catch(err => {
     console.log(err, err.message, err.code); // message: 'The specified key does not exist.',code: 'NoSuchKey'
     if (err.code === 'NoSuchKey') {
-      callback('No file found');
+      callback(new Error('[NotFound] Validation error: No file found'));
     }
     callback(err.message);
   });
@@ -59,10 +60,11 @@ exports.handler = (event, context, callback) => {
 
 
 function createThumbnail(img, imageDetails, watermarkImg) {
+  console.log(watermarkImg);
   let tempImageName = '/tmp/event.jpg';
   return new Promise((resolve, reject) => {
     let geometry = imageDetails.width + 'x' + imageDetails.height + '+0+' + imageDetails.offset;
-    S3Utils.readFileFromBucket(s3, destBucket, watermarkImg).then(response => {
+    S3Utils.readFileFromBucket(s3, srcBucket, watermarkImg).then(response => {
       let image = response.Body;
       fs.writeFile(tempImageName, image, (err) =>  {
         if (err) {
