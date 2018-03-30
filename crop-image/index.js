@@ -102,8 +102,9 @@ function cropImageWithLap(img, cropRatio, laptime, raceType) {
     console.log('cropping with lap image/jpeg');
     gm(img).crop(width * ratio, height * ratio, cropRatio.x * ratio, cropRatio.y * ratio)
       .fill('red')
-      .font('digital-7.ttf', (height*ratio*5/100))
+      .font('digital-7.ttf', (height*ratio*3/100))
       .drawText((width * ratio) + (cropRatio.x * ratio) - (width*ratio*20/100), (height * ratio) + (cropRatio.y * ratio) - (height*ratio*10/100) , raceType)
+      .fontSize((height*ratio*4/100))
       .drawText((width * ratio) + (cropRatio.x * ratio) - (width*ratio*16/100), (height * ratio) + (cropRatio.y * ratio) - (height*ratio*5/100) , laptime)
       .toBuffer('jpg', (err, imgBuffer) => {
         if (err) {
@@ -127,9 +128,10 @@ function addLaptimeToImage(img, laptime, raceType) {
       }
       gm(img)
         .fill('red')
-        .font('digital-7.ttf', (height*5/100))
-        .drawText((width - (width*20/100)), (height - (height*10/100)), raceType)
-        .drawText((width) - (width*16/100), (height) - (height*5/100) , laptime)
+        .font('digital-7.ttf', (height*3/100))
+        .drawText((width - 400), (height - 100), raceType)
+        .fontSize((height*5/100))
+        .drawText((width) - 400, (height) - 20 , laptime)
         .toBuffer('jpg', (err, imgBuffer) => {
           if (err) {
             return reject(err)
